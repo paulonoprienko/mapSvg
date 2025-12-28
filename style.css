@@ -78,6 +78,12 @@ h6 {
   font-weight: 400;
 }
 /*--------------------*/
+
+html,
+body {
+  touch-action: none;
+}
+
 #container {
   display: flex;
   align-items: center;
