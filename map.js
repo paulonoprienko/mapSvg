@@ -67,7 +67,7 @@ const rect = svg.getBoundingClientRect();
 //   { passive: false }
 // );
 
-const zoom = (e, delta, ptX, ptY) => {
+const zoom = (delta, ptX, ptY) => {
   const vb = svg.viewBox.baseVal;
 
   let newWidth = vb.width * delta;
@@ -111,7 +111,7 @@ svg.addEventListener(
   (e) => {
     e.preventDefault();
     const delta = e.deltaY > 0 ? 1.15 : 0.85;
-    zoom(e, delta, e.clientX, e.clientY);
+    zoom(delta, e.clientX, e.clientY);
   },
   { passive: false }
 );
@@ -146,6 +146,8 @@ svg.addEventListener("pointerdown", (e) => {
 
   if (activePointers.length === 2) {
     initialDist = getDistance(activePointers[0], activePointers[1]);
+
+    alert("yo");
   }
 });
 
@@ -188,6 +190,6 @@ svg.addEventListener("pointermove", (e) => {
       y: (activePointers[0].y + activePointers[1].y) / 2,
     };
 
-    zoom(e, scaleChange, midPoint.x, midPoint.y);
+    zoom(scaleChange, midPoint.x, midPoint.y);
   }
 });
