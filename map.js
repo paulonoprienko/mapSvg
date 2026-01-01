@@ -128,6 +128,10 @@ const handlePointerEnd = (e) => {
   if (!activePointers.length) {
     isDragging = false;
   }
+
+  if (activePointers.length < 2) {
+    previousDist = 0;
+  }
 };
 
 const getDistance = (p1, p2) => {
