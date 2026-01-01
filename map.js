@@ -119,7 +119,7 @@ svg.addEventListener(
 let isDragging = false;
 let previousPointerPos = { x: 0, y: 0 };
 let activePointers = [];
-let initialDist;
+let previousDist = 0;
 
 const handlePointerEnd = (e) => {
   activePointers = activePointers.filter((p) => e.pointerId !== p.id);
@@ -145,7 +145,7 @@ svg.addEventListener("pointerdown", (e) => {
   });
 
   if (activePointers.length === 2) {
-    initialDist = getDistance(activePointers[0], activePointers[1]);
+    previousDist = getDistance(activePointers[0], activePointers[1]);
   }
 });
 
@@ -182,12 +182,16 @@ svg.addEventListener("pointermove", (e) => {
     svg.setAttribute("viewBox", `${newX} ${newY} ${vb.width} ${vb.height}`);
   } else if (activePointers.length === 2) {
     const currentDist = getDistance(activePointers[0], activePointers[1]);
-    const scaleChange = currentDist / initialDist;
-    const midPoint = {
-      x: (activePointers[0].x + activePointers[1].x) / 2,
-      y: (activePointers[0].y + activePointers[1].y) / 2,
-    };
+    if (previousDist > 0) {
+      const scaleChange = currentDist / previousDist;
+      const midPoint = {
+        x: (activePointers[0].x + activePointers[1].x) / 2,
+        y: (activePointers[0].y + activePointers[1].y) / 2,
+      };
 
-    zoom(scaleChange, midPoint.x, midPoint.y);
+      zoom(scaleChange, midPoint.x, midPoint.y);
+    }
+
+    previousDist = currentDist;
   }
 });
