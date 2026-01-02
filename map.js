@@ -107,10 +107,10 @@ const handlePointerEnd = (e) => {
     isDragging = false;
   } else if (activePointers.length < 2) {
     previousDist = 0;
-    // previousPointerPos = {
-    //   x: activePointers[0].x,
-    //   y: activePointers[0].y,
-    // };
+    previousPointerPos = {
+      x: activePointers[0].x,
+      y: activePointers[0].y,
+    };
   }
 };
 
