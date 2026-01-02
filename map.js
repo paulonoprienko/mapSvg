@@ -50,11 +50,11 @@ const applyPan = (ptX, ptY, isDragging) => {
   svg.setAttribute("viewBox", `${newX} ${newY} ${vb.width} ${vb.height}`);
 };
 
-const applyZoom = (delta, ptX, ptY) => {
+const applyZoom = (factor, ptX, ptY) => {
   const vb = svg.viewBox.baseVal;
 
-  let newWidth = vb.width * delta;
-  let newHeight = vb.height * delta;
+  let newWidth = vb.width * factor;
+  let newHeight = vb.height * factor;
 
   if (newWidth > initialVB.width || newHeight > initialVB.height) {
     newWidth = initialVB.width;
@@ -93,8 +93,8 @@ svg.addEventListener(
   "wheel",
   (e) => {
     e.preventDefault();
-    const delta = e.deltaY > 0 ? 1.15 : 0.85;
-    applyZoom(delta, e.clientX, e.clientY);
+    const factor = e.deltaY > 0 ? 1.15 : 0.85;
+    applyZoom(factor, e.clientX, e.clientY);
   },
   { passive: false }
 );
@@ -109,6 +109,10 @@ const handlePointerEnd = (e) => {
 
   if (activePointers.length < 2) {
     previousDist = 0;
+    previousPointerPos = {
+      x: activePointers[0].x,
+      y: activePointers[0].y,
+    };
   }
 };
 
@@ -146,14 +150,14 @@ svg.addEventListener("pointermove", (e) => {
   } else if (activePointers.length === 2) {
     const currentDist = getDistance(activePointers[0], activePointers[1]);
     if (previousDist > 0) {
-      const zoomFactor = previousDist / currentDist;
+      const factor = previousDist / currentDist;
       const midPoint = {
         x: (activePointers[0].x + activePointers[1].x) / 2,
         y: (activePointers[0].y + activePointers[1].y) / 2,
       };
 
       applyPan(midPoint.x, midPoint.y, isDragging);
-      applyZoom(zoomFactor, midPoint.x, midPoint.y);
+      applyZoom(factor, midPoint.x, midPoint.y);
     }
 
     previousDist = currentDist;
