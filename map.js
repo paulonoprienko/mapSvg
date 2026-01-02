@@ -103,11 +103,9 @@ const handlePointerEnd = (e) => {
   activePointers = activePointers.filter((p) => e.pointerId !== p.id);
   svg.releasePointerCapture(e.pointerId);
 
-  if (!activePointers.length) {
+  if (activePointers.length === 0) {
     isDragging = false;
-  }
-
-  if (activePointers.length < 2) {
+  } else if (activePointers.length < 2) {
     previousDist = 0;
     previousPointerPos = {
       x: activePointers[0].x,
