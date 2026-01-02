@@ -134,6 +134,7 @@ svg.addEventListener("pointerdown", (e) => {
 
   if (activePointers.length === 2) {
     previousDist = getDistance(activePointers[0], activePointers[1]);
+    previousPointerPos = { x: 0, y: 0 };
   }
 });
 
