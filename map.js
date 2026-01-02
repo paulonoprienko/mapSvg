@@ -94,7 +94,7 @@ svg.addEventListener(
   (e) => {
     e.preventDefault();
     const factor = e.deltaY > 0 ? 1.15 : 0.85;
-    applyZoom(factor, e.clientX, e.clientY);
+    applyZoom(factor, e.screenX, e.screenY);
   },
   { passive: false }
 );
@@ -120,12 +120,12 @@ const getDistance = (p1, p2) => {
 
 svg.addEventListener("pointerdown", (e) => {
   isDragging = true;
-  previousPointerPos = { x: e.clientX, y: e.clientY };
+  previousPointerPos = { x: e.screenX, y: e.screenY };
   svg.setPointerCapture(e.pointerId);
   activePointers.push({
     id: e.pointerId,
-    x: e.clientX,
-    y: e.clientY,
+    x: e.screenX,
+    y: e.screenY,
   });
 
   if (activePointers.length === 2) {
@@ -140,8 +140,8 @@ svg.addEventListener("pointermove", (e) => {
   const index = activePointers.findIndex((p) => p.id === e.pointerId);
   if (index === -1) return;
 
-  activePointers[index].x = e.clientX;
-  activePointers[index].y = e.clientY;
+  activePointers[index].x = e.screenX;
+  activePointers[index].y = e.screenY;
 
   if (activePointers.length === 1) {
     applyPan(activePointers[index].x, activePointers[index].y, isDragging);
