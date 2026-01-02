@@ -187,13 +187,13 @@ svg.addEventListener("pointermove", (e) => {
   } else if (activePointers.length === 2) {
     const currentDist = getDistance(activePointers[0], activePointers[1]);
     if (previousDist > 0) {
-      const scaleChange = currentDist / previousDist;
+      const zoomFactor = previousDist / currentDist;
       const midPoint = {
         x: (activePointers[0].x + activePointers[1].x) / 2,
         y: (activePointers[0].y + activePointers[1].y) / 2,
       };
 
-      zoom(scaleChange, midPoint.x, midPoint.y);
+      zoom(zoomFactor, midPoint.x, midPoint.y);
     }
 
     previousDist = currentDist;
