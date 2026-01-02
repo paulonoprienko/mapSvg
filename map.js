@@ -67,6 +67,27 @@ const rect = svg.getBoundingClientRect();
 //   { passive: false }
 // );
 
+const pan = (ptX, ptY) => {
+  if (!isDragging) return;
+  const vb = svg.viewBox.baseVal;
+
+  let dx = ptX - previousPointerPos.x;
+  let dy = ptY - previousPointerPos.y;
+
+  dx = (dx / rect.width) * vb.width;
+  dy = (dy / rect.height) * vb.height;
+
+  let newX = vb.x - dx;
+  let newY = vb.y - dy;
+
+  newX = Math.max(0, Math.min(newX, initialVB.width - vb.width));
+  newY = Math.max(0, Math.min(newY, initialVB.height - vb.height));
+
+  previousPointerPos = { x: ptX, y: ptY };
+
+  svg.setAttribute("viewBox", `${newX} ${newY} ${vb.width} ${vb.height}`);
+};
+
 const zoom = (delta, ptX, ptY) => {
   const vb = svg.viewBox.baseVal;
 
@@ -164,26 +185,8 @@ svg.addEventListener("pointermove", (e) => {
   activePointers[index].y = e.clientY;
 
   if (activePointers.length === 1) {
-    if (!isDragging) return;
-    const vb = svg.viewBox.baseVal;
-
-    let dx = e.screenX - previousPointerPos.x;
-    let dy = e.screenY - previousPointerPos.y;
-
-    dx = (dx / rect.width) * vb.width;
-    dy = (dy / rect.height) * vb.height;
-
-    let newX = vb.x - dx;
-    let newY = vb.y - dy;
-
-    newX = Math.max(0, Math.min(newX, initialVB.width - vb.width));
-    newY = Math.max(0, Math.min(newY, initialVB.height - vb.height));
-
-    previousPointerPos = { x: e.screenX, y: e.screenY };
-
+    pan(e.screenX, e.screenY);
     console.log(e);
-
-    svg.setAttribute("viewBox", `${newX} ${newY} ${vb.width} ${vb.height}`);
   } else if (activePointers.length === 2) {
     const currentDist = getDistance(activePointers[0], activePointers[1]);
     if (previousDist > 0) {
@@ -193,6 +196,7 @@ svg.addEventListener("pointermove", (e) => {
         y: (activePointers[0].y + activePointers[1].y) / 2,
       };
 
+      pan(midPoint.x, midPoint.y);
       zoom(zoomFactor, midPoint.x, midPoint.y);
     }
 
