@@ -107,16 +107,21 @@ const handlePointerEnd = (e) => {
     isDragging = false;
   } else if (activePointers.length < 2) {
     previousDist = 0;
-    previousPointerPos = {
-      x: activePointers[0].x,
-      y: activePointers[0].y,
-    };
+    // previousPointerPos = {
+    //   x: activePointers[0].x,
+    //   y: activePointers[0].y,
+    // };
   }
 };
 
 const getDistance = (p1, p2) => {
   return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
 };
+
+const getMidPoint = (p1, p2) => ({
+  x: (p1.x + p2.x) / 2,
+  y: (p1.y + p2.y) / 2,
+});
 
 svg.addEventListener("pointerdown", (e) => {
   isDragging = true;
@@ -134,7 +139,7 @@ svg.addEventListener("pointerdown", (e) => {
 
   if (activePointers.length === 2) {
     previousDist = getDistance(activePointers[0], activePointers[1]);
-    previousPointerPos = { x: 0, y: 0 };
+    previousPointerPos = getMidPoint(activePointers[0], activePointers[1]);
   }
 });
 
@@ -154,10 +159,7 @@ svg.addEventListener("pointermove", (e) => {
     const currentDist = getDistance(activePointers[0], activePointers[1]);
     if (previousDist > 0) {
       const factor = previousDist / currentDist;
-      const midPoint = {
-        x: (activePointers[0].x + activePointers[1].x) / 2,
-        y: (activePointers[0].y + activePointers[1].y) / 2,
-      };
+      const midPoint = getMidPoint(activePointers[0], activePointers[1]);
 
       applyPan(midPoint.x, midPoint.y, isDragging);
       applyZoom(factor, midPoint.x, midPoint.y);
