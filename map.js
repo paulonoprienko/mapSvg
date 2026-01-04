@@ -15,13 +15,16 @@ container.innerHTML = svgText;
 
 const svg = document.getElementById("map");
 
-const initialVB = {
+const mapState = {
+  x: svg.viewBox.baseVal.x,
+  y: svg.viewBox.baseVal.y,
   width: svg.viewBox.baseVal.width,
   height: svg.viewBox.baseVal.height,
+  renderScheduled: false,
 };
 
-const minWidth = initialVB.width / 4;
-const minHeight = initialVB.height / 4;
+const minWidth = mapState.width / 4;
+const minHeight = mapState.height / 4;
 const rect = svg.getBoundingClientRect();
 
 let isDragging = false;
@@ -42,8 +45,8 @@ const applyPan = (ptX, ptY, isDragging) => {
   let newX = vb.x - dx;
   let newY = vb.y - dy;
 
-  newX = Math.max(0, Math.min(newX, initialVB.width - vb.width));
-  newY = Math.max(0, Math.min(newY, initialVB.height - vb.height));
+  newX = Math.max(0, Math.min(newX, mapState.width - vb.width));
+  newY = Math.max(0, Math.min(newY, mapState.height - vb.height));
 
   previousPointerPos = { x: ptX, y: ptY };
 
@@ -56,9 +59,9 @@ const applyZoom = (factor, ptX, ptY) => {
   let newWidth = vb.width * factor;
   let newHeight = vb.height * factor;
 
-  if (newWidth > initialVB.width || newHeight > initialVB.height) {
-    newWidth = initialVB.width;
-    newHeight = initialVB.height;
+  if (newWidth > mapState.width || newHeight > mapState.height) {
+    newWidth = mapState.width;
+    newHeight = mapState.height;
   }
 
   if (newWidth < minWidth || newHeight < minHeight) {
@@ -83,8 +86,8 @@ const applyZoom = (factor, ptX, ptY) => {
   let newX = vb.x + dw * ratioX;
   let newY = vb.y + dh * ratioY;
 
-  newX = Math.max(0, Math.min(newX, initialVB.width - newWidth));
-  newY = Math.max(0, Math.min(newY, initialVB.height - newHeight));
+  newX = Math.max(0, Math.min(newX, mapState.width - newWidth));
+  newY = Math.max(0, Math.min(newY, mapState.height - newHeight));
 
   svg.setAttribute("viewBox", `${newX} ${newY} ${newWidth} ${newHeight}`);
 };
