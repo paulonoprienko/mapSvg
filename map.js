@@ -198,8 +198,8 @@ svg.addEventListener("pointerup", handlePointerEnd);
 svg.addEventListener("pointercancel", handlePointerEnd);
 
 svg.addEventListener("pointermove", (e) => {
-  let activePointers = inputState.activePointers;
-  let previousDist = inputState.previousDist;
+  const { activePointers } = inputState;
+  const { previousDist } = inputState;
   const index = activePointers.findIndex((p) => p.id === e.pointerId);
   if (index === -1) return;
 
@@ -218,6 +218,6 @@ svg.addEventListener("pointermove", (e) => {
       applyZoom(factor, midPoint.x, midPoint.y);
     }
 
-    previousDist = currentDist;
+    inputState.previousDist = currentDist;
   }
 });
