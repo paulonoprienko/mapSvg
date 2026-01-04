@@ -15,13 +15,14 @@ container.innerHTML = svgText;
 
 const svg = document.getElementById("map");
 
-const mapState = {
-  x: svg.viewBox.baseVal.x,
-  y: svg.viewBox.baseVal.y,
-  width: svg.viewBox.baseVal.width,
-  height: svg.viewBox.baseVal.height,
+const { x, y, width, height } = svg.viewBox.baseVal;
+const initialVB = { x, y, width, height };
 
-  renderScheduled: false,
+let mapState = {
+  x: initialVB.x,
+  y: initialVB.y,
+  width: initialVB.width,
+  height: initialVB.height,
 };
 
 const inputState = {
@@ -31,48 +32,77 @@ const inputState = {
   previousDist: 0,
 };
 
+const scheduler = {
+  renderScheduled: false,
+
+  createRenderer(rendererFn) {
+    return () => {
+      if (!this.renderScheduled) {
+        this.renderScheduled = true;
+        requestAnimationFrame(() => {
+          rendererFn();
+          this.renderScheduled = false;
+        });
+      }
+    };
+  },
+};
+
+const performSetViewBoxRender = () => {
+  const { x, y, width, height } = mapState;
+  svg.setAttribute("viewBox", `${x} ${y} ${width} ${height}`);
+};
+
+const scheduleRender = scheduler.createRenderer(performSetViewBoxRender);
+
 const minWidth = mapState.width / 4;
 const minHeight = mapState.height / 4;
 const rect = svg.getBoundingClientRect();
 
 const applyPan = (ptX, ptY) => {
   if (!inputState.isDragging) return;
-  const vb = svg.viewBox.baseVal;
+  const { x, y, width, height } = mapState;
 
   let dx = ptX - inputState.previousPointerPos.x;
   let dy = ptY - inputState.previousPointerPos.y;
 
-  dx = (dx / rect.width) * vb.width;
-  dy = (dy / rect.height) * vb.height;
+  dx = (dx / rect.width) * width;
+  dy = (dy / rect.height) * height;
 
-  let newX = vb.x - dx;
-  let newY = vb.y - dy;
+  let newX = x - dx;
+  let newY = y - dy;
 
-  newX = Math.max(0, Math.min(newX, mapState.width - vb.width));
-  newY = Math.max(0, Math.min(newY, mapState.height - vb.height));
+  newX = Math.max(0, Math.min(newX, initialVB.width - width));
+  newY = Math.max(0, Math.min(newY, initialVB.height - height));
 
   inputState.previousPointerPos = { x: ptX, y: ptY };
 
-  svg.setAttribute("viewBox", `${newX} ${newY} ${vb.width} ${vb.height}`);
+  mapState = {
+    ...mapState,
+    x: newX,
+    y: newY,
+  };
+
+  scheduleRender();
 };
 
 const applyZoom = (factor, ptX, ptY) => {
-  const vb = svg.viewBox.baseVal;
+  const { x, y, width, height } = mapState;
 
-  let newWidth = vb.width * factor;
-  let newHeight = vb.height * factor;
+  let newWidth = width * factor;
+  let newHeight = height * factor;
 
-  if (newWidth > mapState.width || newHeight > mapState.height) {
-    newWidth = mapState.width;
-    newHeight = mapState.height;
+  if (newWidth > initialVB.width || newHeight > initialVB.height) {
+    newWidth = initialVB.width;
+    newHeight = initialVB.height;
   }
 
   if (newWidth < minWidth || newHeight < minHeight) {
-    newWidth = vb.width;
-    newHeight = vb.height;
+    newWidth = width;
+    newHeight = height;
   }
 
-  if (newWidth === vb.width || newHeight === vb.height) return;
+  if (newWidth === width || newHeight === height) return;
 
   const pt = svg.createSVGPoint();
   pt.x = ptX;
@@ -80,19 +110,27 @@ const applyZoom = (factor, ptX, ptY) => {
 
   const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
 
-  const ratioX = (svgP.x - vb.x) / vb.width;
-  const ratioY = (svgP.y - vb.y) / vb.height;
+  const ratioX = (svgP.x - x) / width;
+  const ratioY = (svgP.y - y) / height;
 
-  const dw = vb.width - newWidth;
-  const dh = vb.height - newHeight;
+  const dw = width - newWidth;
+  const dh = height - newHeight;
 
-  let newX = vb.x + dw * ratioX;
-  let newY = vb.y + dh * ratioY;
+  let newX = x + dw * ratioX;
+  let newY = y + dh * ratioY;
 
-  newX = Math.max(0, Math.min(newX, mapState.width - newWidth));
-  newY = Math.max(0, Math.min(newY, mapState.height - newHeight));
+  newX = Math.max(0, Math.min(newX, initialVB.width - newWidth));
+  newY = Math.max(0, Math.min(newY, initialVB.height - newHeight));
 
-  svg.setAttribute("viewBox", `${newX} ${newY} ${newWidth} ${newHeight}`);
+  mapState = {
+    ...mapState,
+    x: newX,
+    y: newY,
+    width: newWidth,
+    height: newHeight,
+  };
+
+  scheduleRender();
 };
 
 svg.addEventListener(
