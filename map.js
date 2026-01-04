@@ -20,24 +20,27 @@ const mapState = {
   y: svg.viewBox.baseVal.y,
   width: svg.viewBox.baseVal.width,
   height: svg.viewBox.baseVal.height,
+
   renderScheduled: false,
+};
+
+const inputState = {
+  isDragging: false,
+  previousPointerPos: { x: 0, y: 0 },
+  activePointers: [],
+  previousDist: 0,
 };
 
 const minWidth = mapState.width / 4;
 const minHeight = mapState.height / 4;
 const rect = svg.getBoundingClientRect();
 
-let isDragging = false;
-let previousPointerPos = { x: 0, y: 0 };
-let activePointers = [];
-let previousDist = 0;
-
-const applyPan = (ptX, ptY, isDragging) => {
-  if (!isDragging) return;
+const applyPan = (ptX, ptY) => {
+  if (!inputState.isDragging) return;
   const vb = svg.viewBox.baseVal;
 
-  let dx = ptX - previousPointerPos.x;
-  let dy = ptY - previousPointerPos.y;
+  let dx = ptX - inputState.previousPointerPos.x;
+  let dy = ptY - inputState.previousPointerPos.y;
 
   dx = (dx / rect.width) * vb.width;
   dy = (dy / rect.height) * vb.height;
@@ -48,7 +51,7 @@ const applyPan = (ptX, ptY, isDragging) => {
   newX = Math.max(0, Math.min(newX, mapState.width - vb.width));
   newY = Math.max(0, Math.min(newY, mapState.height - vb.height));
 
-  previousPointerPos = { x: ptX, y: ptY };
+  inputState.previousPointerPos = { x: ptX, y: ptY };
 
   svg.setAttribute("viewBox", `${newX} ${newY} ${vb.width} ${vb.height}`);
 };
@@ -103,14 +106,17 @@ svg.addEventListener(
 );
 
 const handlePointerEnd = (e) => {
-  activePointers = activePointers.filter((p) => e.pointerId !== p.id);
+  let { activePointers } = inputState;
+  inputState.activePointers = activePointers.filter(
+    (p) => e.pointerId !== p.id
+  );
   svg.releasePointerCapture(e.pointerId);
 
   if (activePointers.length === 0) {
-    isDragging = false;
+    inputState.isDragging = false;
   } else if (activePointers.length < 2) {
-    previousDist = 0;
-    previousPointerPos = {
+    inputState.previousDist = 0;
+    inputState.previousPointerPos = {
       x: activePointers[0].x,
       y: activePointers[0].y,
     };
@@ -127,9 +133,10 @@ const getMidPoint = (p1, p2) => ({
 });
 
 svg.addEventListener("pointerdown", (e) => {
-  isDragging = true;
+  inputState.isDragging = true;
 
   svg.setPointerCapture(e.pointerId);
+  let { activePointers } = inputState;
   activePointers.push({
     id: e.pointerId,
     x: e.clientX,
@@ -137,12 +144,15 @@ svg.addEventListener("pointerdown", (e) => {
   });
 
   if (activePointers.length === 1) {
-    previousPointerPos = { x: e.clientX, y: e.clientY };
+    inputState.previousPointerPos = { x: e.clientX, y: e.clientY };
   }
 
   if (activePointers.length === 2) {
-    previousDist = getDistance(activePointers[0], activePointers[1]);
-    previousPointerPos = getMidPoint(activePointers[0], activePointers[1]);
+    inputState.previousDist = getDistance(activePointers[0], activePointers[1]);
+    inputState.previousPointerPos = getMidPoint(
+      activePointers[0],
+      activePointers[1]
+    );
   }
 });
 
@@ -150,6 +160,8 @@ svg.addEventListener("pointerup", handlePointerEnd);
 svg.addEventListener("pointercancel", handlePointerEnd);
 
 svg.addEventListener("pointermove", (e) => {
+  let activePointers = inputState.activePointers;
+  let previousDist = inputState.previousDist;
   const index = activePointers.findIndex((p) => p.id === e.pointerId);
   if (index === -1) return;
 
@@ -157,14 +169,14 @@ svg.addEventListener("pointermove", (e) => {
   activePointers[index].y = e.clientY;
 
   if (activePointers.length === 1) {
-    applyPan(activePointers[index].x, activePointers[index].y, isDragging);
+    applyPan(activePointers[index].x, activePointers[index].y);
   } else if (activePointers.length === 2) {
     const currentDist = getDistance(activePointers[0], activePointers[1]);
     if (previousDist > 0) {
       const factor = previousDist / currentDist;
       const midPoint = getMidPoint(activePointers[0], activePointers[1]);
 
-      applyPan(midPoint.x, midPoint.y, isDragging);
+      applyPan(midPoint.x, midPoint.y);
       applyZoom(factor, midPoint.x, midPoint.y);
     }
 
