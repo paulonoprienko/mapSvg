@@ -145,12 +145,12 @@ svg.addEventListener(
 
 const handlePointerEnd = (e) => {
   let { activePointers } = inputState;
-  inputState.activePointers = activePointers.filter(
+  inputState.activePointers = activePointers = activePointers.filter(
     (p) => e.pointerId !== p.id
   );
   svg.releasePointerCapture(e.pointerId);
 
-  if (activePointers.length === 0) {
+  if (activePointers.length < 1) {
     inputState.isDragging = false;
   } else if (activePointers.length < 2) {
     inputState.previousDist = 0;
