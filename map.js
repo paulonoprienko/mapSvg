@@ -203,6 +203,8 @@ svg.addEventListener("pointerdown", (e) => {
     y: e.clientY,
   });
 
+  console.log(e);
+
   if (activePointers.length === 1) {
     inputState.previousDragPoint = { x: e.clientX, y: e.clientY };
   }
@@ -244,9 +246,14 @@ svg.addEventListener("pointermove", (e) => {
   }
 
   if (inputState.isDragging) {
+    const smoothing = 0.3;
     inputState.lastDragDelta = {
-      dx: currentPointer.x - inputState.previousDragPoint.x,
-      dy: currentPointer.y - inputState.previousDragPoint.y,
+      dx:
+        inputState.lastDragDelta.dx * (1 - smoothing) +
+        (currentPointer.x - inputState.previousDragPoint.x) * smoothing,
+      dy:
+        inputState.lastDragDelta.dy * (1 - smoothing) +
+        (currentPointer.y - inputState.previousDragPoint.y) * smoothing,
     };
     applyPan(currentPointer.x, currentPointer.y);
     inputState.previousDragPoint = {
