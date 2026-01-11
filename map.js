@@ -14,7 +14,7 @@ const svgText = await response.text();
 container.innerHTML = svgText;
 
 const info = document.createElement("div");
-container.appendChild(info);
+container.prepend(info);
 info.textContent = 0;
 
 const svg = document.getElementById("map");
