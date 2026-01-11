@@ -13,6 +13,10 @@ const svgText = await response.text();
 
 container.innerHTML = svgText;
 
+const info = document.createElement("div");
+container.appendChild(info);
+info.textContent = 0;
+
 const svg = document.getElementById("map");
 
 const { x, y, width, height } = svg.viewBox.baseVal;
@@ -255,6 +259,7 @@ svg.addEventListener("pointermove", (e) => {
         inputState.lastDragDelta.dy * (1 - smoothing) +
         (currentPointer.y - inputState.previousDragPoint.y) * smoothing,
     };
+    info.textContent = `${inputState.lastDragDelta.dx} ${inputState.lastDragDelta.dy}`;
     applyPan(currentPointer.x, currentPointer.y);
     inputState.previousDragPoint = {
       x: currentPointer.x,
