@@ -25,22 +25,23 @@ let mapState = {
   height: initialVB.height,
 };
 
-const inputState = {
+let inputState = {
   isDragging: false,
-  previousPointerPos: { x: 0, y: 0 },
+  lastDragDelta: { dx: 0, dy: 0 },
   activePointers: [],
+  previousDragPoint: { x: 0, y: 0 },
   previousDist: 0,
 };
 
 const scheduler = {
   renderScheduled: false,
 
-  createRenderer(rendererFn) {
+  createRenderer(renderFn) {
     return () => {
       if (!this.renderScheduled) {
         this.renderScheduled = true;
         requestAnimationFrame(() => {
-          rendererFn();
+          renderFn();
           this.renderScheduled = false;
         });
       }
@@ -55,16 +56,16 @@ const performSetViewBoxRender = () => {
 
 const scheduleRender = scheduler.createRenderer(performSetViewBoxRender);
 
-const minWidth = mapState.width / 4;
-const minHeight = mapState.height / 4;
+const maxScale = 4;
+const minWidth = mapState.width / maxScale;
+const minHeight = mapState.height / maxScale;
 const rect = svg.getBoundingClientRect();
 
 const applyPan = (ptX, ptY) => {
-  if (!inputState.isDragging) return;
   const { x, y, width, height } = mapState;
 
-  let dx = ptX - inputState.previousPointerPos.x;
-  let dy = ptY - inputState.previousPointerPos.y;
+  let dx = ptX - inputState.previousDragPoint.x;
+  let dy = ptY - inputState.previousDragPoint.y;
 
   dx = (dx / rect.width) * width;
   dy = (dy / rect.height) * height;
@@ -74,8 +75,6 @@ const applyPan = (ptX, ptY) => {
 
   newX = Math.max(0, Math.min(newX, initialVB.width - width));
   newY = Math.max(0, Math.min(newY, initialVB.height - height));
-
-  inputState.previousPointerPos = { x: ptX, y: ptY };
 
   mapState = {
     ...mapState,
@@ -143,6 +142,28 @@ svg.addEventListener(
   { passive: false }
 );
 
+const startInertia = () => {
+  const friction = 0.97;
+  const minDragDelta = 2;
+  const step = () => {
+    const { dx, dy } = inputState.lastDragDelta;
+    if (Math.abs(dx) < minDragDelta && Math.abs(dy) < minDragDelta) {
+      inputState.lastDragDelta = { dx: 0, dy: 0 };
+      return;
+    }
+
+    applyPan(
+      inputState.previousDragPoint.x + dx,
+      inputState.previousDragPoint.y + dy
+    );
+
+    inputState.lastDragDelta.dx *= friction;
+    inputState.lastDragDelta.dy *= friction;
+    requestAnimationFrame(step);
+  };
+  step();
+};
+
 const handlePointerEnd = (e) => {
   let { activePointers } = inputState;
   inputState.activePointers = activePointers = activePointers.filter(
@@ -152,18 +173,18 @@ const handlePointerEnd = (e) => {
 
   if (activePointers.length < 1) {
     inputState.isDragging = false;
+    startInertia();
   } else if (activePointers.length < 2) {
     inputState.previousDist = 0;
-    inputState.previousPointerPos = {
+    inputState.previousDragPoint = {
       x: activePointers[0].x,
       y: activePointers[0].y,
     };
   }
 };
 
-const getDistance = (p1, p2) => {
-  return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
-};
+const getDistance = (p1, p2) =>
+  Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
 
 const getMidPoint = (p1, p2) => ({
   x: (p1.x + p2.x) / 2,
@@ -172,6 +193,7 @@ const getMidPoint = (p1, p2) => ({
 
 svg.addEventListener("pointerdown", (e) => {
   inputState.isDragging = true;
+  inputState.lastDragDelta = { dx: 0, dy: 0 };
 
   svg.setPointerCapture(e.pointerId);
   let { activePointers } = inputState;
@@ -182,12 +204,12 @@ svg.addEventListener("pointerdown", (e) => {
   });
 
   if (activePointers.length === 1) {
-    inputState.previousPointerPos = { x: e.clientX, y: e.clientY };
+    inputState.previousDragPoint = { x: e.clientX, y: e.clientY };
   }
 
   if (activePointers.length === 2) {
     inputState.previousDist = getDistance(activePointers[0], activePointers[1]);
-    inputState.previousPointerPos = getMidPoint(
+    inputState.previousDragPoint = getMidPoint(
       activePointers[0],
       activePointers[1]
     );
@@ -206,18 +228,30 @@ svg.addEventListener("pointermove", (e) => {
   activePointers[index].x = e.clientX;
   activePointers[index].y = e.clientY;
 
+  let currentPointer;
   if (activePointers.length === 1) {
-    applyPan(activePointers[index].x, activePointers[index].y);
+    currentPointer = activePointers[index];
   } else if (activePointers.length === 2) {
     const currentDist = getDistance(activePointers[0], activePointers[1]);
     if (previousDist > 0) {
       const factor = previousDist / currentDist;
       const midPoint = getMidPoint(activePointers[0], activePointers[1]);
-
-      applyPan(midPoint.x, midPoint.y);
+      currentPointer = midPoint;
       applyZoom(factor, midPoint.x, midPoint.y);
     }
 
     inputState.previousDist = currentDist;
+  }
+
+  if (inputState.isDragging) {
+    inputState.lastDragDelta = {
+      dx: currentPointer.x - inputState.previousDragPoint.x,
+      dy: currentPointer.y - inputState.previousDragPoint.y,
+    };
+    applyPan(currentPointer.x, currentPointer.y);
+    inputState.previousDragPoint = {
+      x: currentPointer.x,
+      y: currentPointer.y,
+    };
   }
 });
