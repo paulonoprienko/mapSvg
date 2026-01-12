@@ -146,6 +146,7 @@ svg.addEventListener(
   { passive: false }
 );
 
+let inertiaCall = 0;
 const startInertia = () => {
   const friction = 0.97;
   const minDragDelta = 2;
@@ -156,6 +157,7 @@ const startInertia = () => {
       return;
     }
 
+    info.textContent = `${++inertiaCall}`;
     applyPan(
       inputState.previousDragPoint.x + dx,
       inputState.previousDragPoint.y + dy
@@ -177,6 +179,7 @@ const handlePointerEnd = (e) => {
 
   if (activePointers.length < 1) {
     inputState.isDragging = false;
+    inertiaCall = 0;
     startInertia();
   } else if (activePointers.length < 2) {
     inputState.previousDist = 0;
@@ -259,7 +262,7 @@ svg.addEventListener("pointermove", (e) => {
         inputState.lastDragDelta.dy * (1 - smoothing) +
         (currentPointer.y - inputState.previousDragPoint.y) * smoothing,
     };
-    info.textContent = `${inputState.lastDragDelta.dx} ${inputState.lastDragDelta.dy}`;
+    // info.textContent = `${inputState.lastDragDelta.dx} ${inputState.lastDragDelta.dy}`;
     applyPan(currentPointer.x, currentPointer.y);
     inputState.previousDragPoint = {
       x: currentPointer.x,
